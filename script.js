@@ -1,6 +1,11 @@
 let dlist=document.querySelector('#searchboxfield');
 let inpfield=document.querySelector('#inpbox');
 //localStorage.setItem('favourites',JSON.stringify({}));
+let favs=localStorage.getItem('favourites');
+if(favs==null)
+{
+    localStorage.setItem('favourites',JSON.stringify({}));
+}
 let favmeals=JSON.parse(localStorage.getItem('favourites'));
 
 function inpchange(ele)
