@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="style.css" >
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    </head>
+    <script src="./script.js"></script>
+    <script>
+        let displaydata='';
+        let favmeals1=JSON.parse(localStorage.getItem('favourites'));
+        //console.log('localstorage favmeals');
+        //console.log(favmeals1);
+        //console.log(Object.keys(favmeals1).length);
+        window.onload=async function()
+        {
+            let url=window.location.href;
+            let params=url.split('?')[1].split('&');
+            var tempdata={};
+            let tkey='';
+            for(param of params)
+            {
+                let paramt=param.split('=');
+                tkey=paramt[0];
+                tempdata[paramt[0]]=paramt[1];
+            }
+            //let inp=tempdata['name'];
+            let inp=tempdata[tkey];
+            console.log('key is '+tkey);
+            if(tkey!='favs')
+            {
+            await fetch('https://www.themealdb.com/api/json/v1/1/search.php?s='+inp)
+            .then((response)=>{
+                if(!response.ok)
+                {
+                    throw new Error('fetching failed');
+                }
+                return response.json();
+            })
+            .then((res)=>{
+                res=res['meals'];
+                displayrowdata='';
+                displaydata='';
+                let searchresultsdiv=document.querySelector('#searchresults');
+                console.log(res);
+                for(let i=0;i<res.length;i++)
+                {
+                    for(let j=0;j<4 && i*4+j<res.length;j++)
+                    {
+                        displayrowdata+=`<div class="searchresult" >
+                    <div class="imgdiv" onclick="detailpage(${res[i*4+j]['idMeal']})">
+                        <img src="${res[i*4+j]['strMealThumb']}" class="displayimagesr"/>
+                    </div>
+                    <div class="itemdetailssr">
+                        <div >
+                            <p  class="itemname">${res[i*4+j]['strMeal']}</p>
+                            <p class="itemcategory">${res[i*4+j]['strCategory']}</p>
+                        </div>
+                        <div style="padding-right:20px">
+                            <img id='mealtype${res[i*4+j]['idMeal']}' src="${favmeals1 && favmeals1[res[i*4+j]['idMeal']] ? './assets/fav.png':'./assets/nofav.png'}"  style="width:30px;height:30px" onclick="favmealsfun(${res[i*4+j]['idMeal']})"/>
+                        </div>
+                    </div>
+                </div>`;
+                    }
+                    console.log('after second for');
+                    displaydata+=`<div class="searchresrow">${displayrowdata}</div>`;
+                    displayrowdata='';
+                }
+                searchresultsdiv.innerHTML=displaydata;
+            })
+            .catch((error)=>{
+                console.log(error);
+            });
+            }
+            else if(tkey=='favs')
+            {
+                console.log('in favs part');
+                let favkeys=Object.keys(favmeals1);
+                let displaydata='';
+                let searchresultsdiv=document.querySelector('#searchresults');
+                let g=0;
+
+                for(let i=0;i<favkeys.length;i++)
+                {
+                    let displayrowdata='';
+                    for(let j=0;j<4 && i*4+j<favkeys.length;j++)
+                    {
+                        console.log('key is'+favkeys[i*4+j]);
+                        await fetch('https://www.themealdb.com/api/json/v1/1/lookup.php?i='+favkeys[i*4+j])
+                        .then((response)=>{
+                            if(!response.ok)
+                            {
+                                throw new Error('fetching failed');
+                            }
+                            return response.json();
+                        })
+                        .then((res)=>{
+                            console.log(res);
+                            
+                            res=res['meals'][0];
+                            displayrowdata+=`<div class="searchresult" >
+                                <div class="imgdiv" onclick="detailpage(${res['idMeal']})">
+                                    <img src="${res['strMealThumb']}" class="displayimagesr"/>
+                                </div>
+                                <div class="itemdetailssr">
+                                    <div >
+                                    <p class="itemname" >${res['strMeal']}</p>
+                                    <p class="itecategory" >${res['strCategory']}</p>
+                                </div>
+                                <div style="padding-right:20px">
+                                    <img id='mealtype${res['idMeal']}' src="${res['idMeal']?'./assets/fav.png':'./assets/nofav.png'}"  style="width:30px;height:30px" onclick="favmealsfun(${res['idMeal']})"/>
+                                </div>
+                                </div>
+                            </div>`;
+                            
+                            if(j==3 || (i*4)+j+1>=favkeys.length)
+                            {
+                                console.log(displayrowdata);
+                                displaydata+=`<div class="searchresrow">${displayrowdata}</div>`;
+                                searchresultsdiv.innerHTML=searchresultsdiv.innerHTML+displaydata; 
+                                displaydata='';
+                            }
+                        })
+                        .catch((err)=>{
+                            console.log(err);
+                        });
+                    }
+                }
+                
+            }
+        }
+        function detailpage(id)
+        {
+            window.location.href='./detail.html?id='+id;
+        }
+    </script>
+    <body>
+        <div class="container-fluid">
+            <div class="row" style="font-size: 22px;font-weight: 600;margin-top: 10px;">
+                <div style="width:80%">
+                Search results
+                </div>
+                <div style="width:20%;text-align: right;align-self: flex-end;"  >
+                    <a href="./searchresults.html?favs=favourites">
+                        <input type="button" value=" Favourites" ></input>
+                    </a>
+                </div>
+            </div>
+            <div id="searchresults">
+                
+                
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    </body>
+</html>
